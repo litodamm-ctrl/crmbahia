@@ -1,6 +1,6 @@
 'use strict';
 const channelMenu=document.createElement('button');channelMenu.dataset.view='canales';channelMenu.textContent='↗ Canales de venta';$('nav').append(channelMenu);
-const channelSelect=document.createElement('select');channelSelect.id='channelFilter';channelSelect.setAttribute('aria-label','Filtrar todo por canal de venta');channelSelect.innerHTML='<option value="">Todos los canales</option>'+['whatsapp','instagram','other','unknown'].map(k=>`<option value="${k}">${Channels.label(k)}</option>`).join('');$('#advisorFilter').after(channelSelect);channelSelect.onchange=e=>{assignedChannel=e.target.value;render();};
+const channelSelect=document.createElement('select');channelSelect.id='channelFilter';channelSelect.setAttribute('aria-label','Filtrar todo por canal de venta');channelSelect.innerHTML='<option value="">Todos los canales</option>'+['whatsapp','instagram','messenger','other','unknown'].map(k=>`<option value="${k}">${Channels.label(k)}</option>`).join('');$('#advisorFilter').after(channelSelect);channelSelect.onchange=e=>{assignedChannel=e.target.value;render();};
 function channelSettings(){return state.salesChannels||{};}
 function renderChannels(){
  const arr=leads(),settings=channelSettings();
