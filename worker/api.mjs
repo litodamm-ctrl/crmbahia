@@ -4,6 +4,7 @@ export async function api(request,env){
  if(!env.DB)return json({error:'La base de datos aún no está disponible.'},503);
  if(url.pathname==='/api/health')return json({storage:'D1',ready:true});
  const row=await env.DB.prepare('SELECT revision, payload FROM crm_workspace WHERE id = ?').bind('main').first();
+ if(url.pathname==='/api/agent')return agentAPI(request,env,row);
  if(url.pathname==='/api/refresh'){
   const state=row?JSON.parse(row.payload):null;
   if(request.method==='GET')return json({revision:row?.revision||0,request:state?.refreshRequest||null,lastSyncAt:state?.lastSyncAt||null,summary:state?.syncSummary||null,checkIntervalMinutes:5});
@@ -55,6 +56,7 @@ export async function api(request,env){
  if(!body.requestId||typeof body.requestId!=='string'||body.requestId.length>80||!Number.isInteger(body.revision)||body.revision<0)return json({error:'Falta la versión del CRM.'},400);
  const existing=await env.DB.prepare('SELECT revision FROM crm_audit WHERE request_id = ?').bind(body.requestId).first();if(existing)return json({revision:existing.revision,duplicate:true});
  const data=body.state;
+ if(data?.salesAgent&&!AgentKit.valid(data.salesAgent))return json({error:'Configuración o materiales del agente inválidos.'},400);
  if(!data||!Array.isArray(data.leads)||data.leads.length>2000||!Array.isArray(data.sources)||data.sources.length>100||!['demo','importado'].includes(data.mode)||data.leads.some(c=>!c||typeof c.uid!=='string'||typeof c.name!=='string'||typeof c.project!=='string'||c.uid.length>300||c.name.length>150))return json({error:'Estructura de CRM inválida.'},400);
  if(new Set(data.leads.map(c=>c.uid)).size!==data.leads.length)return json({error:'Hay identificadores repetidos.'},400);
  if((row?.revision||0)!==body.revision)return json({error:'Otro usuario actualizó el CRM. Recarga los datos antes de guardar.',conflict:true},409);
