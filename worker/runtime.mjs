@@ -1,6 +1,14 @@
 export default {async fetch(request,env){
  try{
   const p=new URL(request.url).pathname;
+  if(p==='/crm-session.js'){
+   if(request.method!=='GET')return new Response('Method not allowed',{status:405});
+   const dataResponse=await api(new Request(new URL('/api/state',request.url),{headers:request.headers}),env);
+   if(!dataResponse.ok)return dataResponse;
+   const data=await dataResponse.json();
+   const safe=JSON.stringify(data).replace(/</g,'\\u003c').replace(/>/g,'\\u003e').replace(/&/g,'\\u0026').replace(/\u2028/g,'\\u2028').replace(/\u2029/g,'\\u2029');
+   return new Response('window.__crmSessionBootstrap='+safe+';',{headers:{'Content-Type':'text/javascript; charset=utf-8','Cache-Control':'private, no-store','Vary':'Cookie','X-Content-Type-Options':'nosniff','Cross-Origin-Resource-Policy':'same-origin'}});
+  }
   const endpoint=new URL(request.url).searchParams.get('crmEndpoint');
   if(p==='/'&&endpoint!==null){
    if(!/^\/api\/(state|refresh|conversations|audit|agent|health)(\?[^#]*)?$/.test(endpoint))return new Response(JSON.stringify({error:'Ruta de conexión inválida.'}),{status:400,headers:{'Content-Type':'application/json','Cache-Control':'private, no-store'}});
