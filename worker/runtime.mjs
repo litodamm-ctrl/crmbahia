@@ -1,6 +1,11 @@
 export default {async fetch(request,env){
  try{
   const p=new URL(request.url).pathname;
+  const endpoint=new URL(request.url).searchParams.get('crmEndpoint');
+  if(p==='/'&&endpoint!==null){
+   if(!/^\/api\/(state|refresh|conversations|audit|agent|health)(\?[^#]*)?$/.test(endpoint))return new Response(JSON.stringify({error:'Ruta de conexión inválida.'}),{status:400,headers:{'Content-Type':'application/json','Cache-Control':'private, no-store'}});
+   return await api(new Request(new URL(endpoint,request.url),request),env);
+  }
   if(p.startsWith('/api/'))return await api(request,env);
   let content=assets[p==='/'?'/index.html':p];
   if(content===undefined)return new Response('Not found',{status:404});
