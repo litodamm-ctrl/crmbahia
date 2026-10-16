@@ -17,6 +17,7 @@ export default {async fetch(request,env){
   if(p.startsWith('/api/'))return await api(request,env);
   let content=assets[p==='/'?'/index.html':p];
   if(content===undefined)return new Response('Not found',{status:404});
+  if(p.endsWith('.png')&&content.base64)return new Response(Uint8Array.from(atob(content.base64),c=>c.charCodeAt(0)),{headers:{'Content-Type':'image/png','Cache-Control':'private, no-store','X-Content-Type-Options':'nosniff','Vary':'Cookie'}});
   if(p==='/'||p==='/index.html'){
    // Dispatch authenticates this private document request before it reaches the worker.
    // Read the same private database at runtime; never bake customer data into assets.
@@ -27,6 +28,6 @@ export default {async fetch(request,env){
     content=content.replace('</head>','<script type="application/json" id="crmInitialState">'+safe+'</script></head>');
    }
   }
-  return new Response(content,{headers:{'Content-Type':p.endsWith('.css')?'text/css':p.endsWith('.js')?'text/javascript':'text/html','Cache-Control':'private, no-store','X-Content-Type-Options':'nosniff','Vary':'Cookie'}});
+  return new Response(content,{headers:{'Content-Type':p.endsWith('.webmanifest')?'application/manifest+json':p.endsWith('.css')?'text/css':p.endsWith('.js')?'text/javascript':'text/html','Cache-Control':'private, no-store','X-Content-Type-Options':'nosniff','Vary':'Cookie'}});
  }catch(error){console.error('CRM request failed',error.message);return new Response(JSON.stringify({error:'No se pudo completar la operación.'}),{status:500,headers:{'Content-Type':'application/json','Cache-Control':'private, no-store'}});}
 }};
