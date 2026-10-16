@@ -1,0 +1,9 @@
+[build]
+  command = "node scripts/verify-netlify-entry.cjs"
+  publish = "netlify-entry"
+
+[[redirects]]
+  from = "/*"
+  to = "https://lotes-gestion-comercial-marru.litodamm.chatgpt.site/:splat"
+  status = 302
+  force = true
