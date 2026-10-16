@@ -4,6 +4,22 @@ export async function api(request,env){
  if(!env.DB)return json({error:'La base de datos aún no está disponible.'},503);
  if(url.pathname==='/api/health')return json({storage:'D1',ready:true});
  const row=await env.DB.prepare('SELECT revision, payload FROM crm_workspace WHERE id = ?').bind('main').first();
+ if(url.pathname==='/api/refresh'){
+  const state=row?JSON.parse(row.payload):null;
+  if(request.method==='GET')return json({revision:row?.revision||0,request:state?.refreshRequest||null,lastSyncAt:state?.lastSyncAt||null,summary:state?.syncSummary||null,checkIntervalMinutes:5});
+  if(request.method!=='POST')return json({error:'Método no disponible.'},405);
+  if(!user)return json({error:'Inicia sesión para actualizar los CRM.'},401);
+  if(request.headers.get('origin')!==url.origin)return json({error:'Origen no autorizado.'},403);
+  const text=await request.text();if(text.length>300)return json({error:'Solicitud inválida.'},400);
+  let body;try{body=JSON.parse(text);}catch{return json({error:'Solicitud inválida.'},400);}
+  if(!body||typeof body.requestId!=='string'||!/^[a-zA-Z0-9-]{16,80}$/.test(body.requestId)||!Number.isInteger(body.revision))return json({error:'Solicitud inválida.'},400);
+  if(!state?.sources?.length)return json({error:'Primero registra los CRM de Google Sheets.'},400);
+  if(state.refreshRequest?.id===body.requestId||['queued','running'].includes(state.refreshRequest?.status))return json({revision:row.revision,request:state.refreshRequest,alreadyRequested:true});
+  if(row.revision!==body.revision)return json({error:'El CRM cambió. Recarga antes de solicitar la actualización.',conflict:true},409);
+  state.refreshRequest={id:body.requestId,status:'queued',requestedAt:new Date().toISOString(),requestedBy:email||user,message:'Solicitud guardada. El agente revisa solicitudes cada cinco minutos; el inicio depende de su disponibilidad.'};
+  const result=await api(new Request(new URL('/api/state',request.url),{method:'POST',headers:request.headers,body:JSON.stringify({revision:row.revision,requestId:body.requestId,state,summary:'Solicitud manual de actualización desde Google Sheets'})}),env);
+  const outcome=await result.json();return json({...outcome,...(result.ok?{request:state.refreshRequest}:{} )},result.status);
+ }
  if(url.pathname==='/api/conversations'){
   const workspace=row?JSON.parse(row.payload):{leads:[]};
   if(request.method==='GET'){
