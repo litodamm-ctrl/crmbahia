@@ -35,7 +35,7 @@ export async function api(request,env){
   if(request.headers.get('origin')!==url.origin)return json({error:'Origen no autorizado.'},403);
   const text=await request.text();if(text.length>30000)return json({error:'El registro es demasiado largo.'},413);
   let entry;try{entry=JSON.parse(text);}catch{return json({error:'Datos inválidos.'},400);}
-  if(!entry||typeof entry.id!=='string'||!/^[a-zA-Z0-9-]{16,80}$/.test(entry.id)||typeof entry.leadUid!=='string'||!['whatsapp','instagram','other'].includes(entry.channel)||!['received_manual','note','draft'].includes(entry.kind)||typeof entry.body!=='string'||!entry.body.trim()||entry.body.length>6000)return json({error:'Completa cliente, canal y texto; máximo 6000 caracteres.'},400);
+  if(!entry||typeof entry.id!=='string'||!/^[a-zA-Z0-9-]{16,80}$/.test(entry.id)||typeof entry.leadUid!=='string'||!['whatsapp','instagram','messenger','other'].includes(entry.channel)||!['received_manual','note','draft'].includes(entry.kind)||typeof entry.body!=='string'||!entry.body.trim()||entry.body.length>6000)return json({error:'Completa cliente, canal y texto; máximo 6000 caracteres.'},400);
   const lead=workspace.leads.find(c=>c.uid===entry.leadUid);if(!lead||lead.duplicateOf)return json({error:'Selecciona una oportunidad activa en el CRM.'},400);
   const previous=await env.DB.prepare('SELECT * FROM crm_conversation_entries WHERE id = ?').bind(entry.id).first();
   if(previous){if(previous.lead_uid!==entry.leadUid||previous.body!==entry.body.trim()||previous.channel!==entry.channel||previous.kind!==entry.kind)return json({error:'Identificador utilizado por otro registro.'},409);return json({entry:previous,duplicate:true});}
