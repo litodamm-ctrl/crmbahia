@@ -10,7 +10,7 @@ let state={leads:[],mode:'importado'},view='inicio',project='',assignedAdvisor='
 function save(){try{localStorage.setItem('galbu-crm-v1',JSON.stringify(state));}catch{toast('No se pudo guardar en este navegador. Exporta una copia antes de cerrar.');}}
 function toast(t){$('#toast').textContent=t;$('#toast').style.display='block';clearTimeout(window.toastTimer);window.toastTimer=setTimeout(()=>$('#toast').style.display='none',4500);}
 let assignedChannel='';
-const leads=()=>state.leads.filter(c=>(!project||c.project===project)&&Advisor.matches(c.owner,assignedAdvisor)&&(!assignedChannel||Channels.kind(c)===assignedChannel));
+const leads=()=>state.leads.filter(c=>!c.duplicateOf&&(!project||c.project===project)&&Advisor.matches(c.owner,assignedAdvisor)&&(!assignedChannel||Channels.kind(c)===assignedChannel));
 const live=()=>leads().filter(c=>!CRM.terminal(c));
 function attention(){return live().filter(c=>CRM.urgency(c,today())>0).sort((a,b)=>CRM.urgency(b,today())-CRM.urgency(a,today())||(a.due||'9999').localeCompare(b.due||'9999'));}
 function priority(c){const u=CRM.urgency(c,today());return u===3?'<span class="pill urgent">Vencida</span>':u===2?'<span class="pill blue">Para hoy</span>':u===1?'<span class="pill gray">Sin plan completo</span>':'<span class="pill">Programada</span>';}

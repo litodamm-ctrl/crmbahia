@@ -7,3 +7,5 @@
 .header-actions{flex-wrap:wrap}.header-actions #advisorFilter{width:200px}@media(max-width:760px){.header-actions #advisorFilter{flex:1;min-width:150px}}
 
 .channel-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px;margin:24px 0}.channel-card{border:1px solid #dce4df;border-radius:14px;padding:22px}.channel-card label{display:block;margin:16px 0}.channel-card input,.channel-card select{width:100%}.channel-link{display:inline-block;border:1px solid #ccd8d0;border-radius:8px;padding:10px 14px;color:#173d32;text-decoration:none}#channelFilter{max-width:185px}.header-actions{flex-wrap:wrap}@media(max-width:760px){.channel-grid{grid-template-columns:1fr}#channelFilter{max-width:100%}}
+
+.project-review{border-left:4px solid #bf9b50;padding:14px 18px;margin:14px 0}.project-card a{overflow-wrap:anywhere}.project-cover{overflow-wrap:anywhere}#qualityPanel .button-group{flex-wrap:wrap}
