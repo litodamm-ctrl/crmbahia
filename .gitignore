@@ -1,0 +1,8 @@
+dist/
+node_modules/
+.sites-runtime/
+.env
+.env.*
+work/
+*.sqlite
+crm-import-input.json

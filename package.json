@@ -1,0 +1,1 @@
+{"name":"bahia-investment-crm","private":true,"type":"module","scripts":{"build":"node scripts/build-worker.cjs"}}
