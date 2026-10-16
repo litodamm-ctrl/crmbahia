@@ -4,6 +4,28 @@ export async function api(request,env){
  if(!env.DB)return json({error:'La base de datos aún no está disponible.'},503);
  if(url.pathname==='/api/health')return json({storage:'D1',ready:true});
  const row=await env.DB.prepare('SELECT revision, payload FROM crm_workspace WHERE id = ?').bind('main').first();
+ if(url.pathname==='/api/conversations'){
+  const workspace=row?JSON.parse(row.payload):{leads:[]};
+  if(request.method==='GET'){
+   const uid=url.searchParams.get('lead');
+   if(!uid){const result=await env.DB.prepare('SELECT lead_uid, MAX(created_at) AS last_at, COUNT(*) AS entries FROM crm_conversation_entries GROUP BY lead_uid').all();return json({threads:result.results});}
+   if(!workspace.leads.some(c=>c.uid===uid))return json({error:'Cliente no encontrado.'},404);
+   const result=await env.DB.prepare('SELECT id,lead_uid,channel,kind,body,actor,created_at FROM crm_conversation_entries WHERE lead_uid = ? ORDER BY created_at DESC, id DESC LIMIT 100').bind(uid).all();
+   return json({entries:result.results.reverse(),limit:100});
+  }
+  if(request.method!=='POST')return json({error:'Método no disponible.'},405);
+  if(!user)return json({error:'Inicia sesión para registrar una conversación.'},401);
+  if(request.headers.get('origin')!==url.origin)return json({error:'Origen no autorizado.'},403);
+  const text=await request.text();if(text.length>30000)return json({error:'El registro es demasiado largo.'},413);
+  let entry;try{entry=JSON.parse(text);}catch{return json({error:'Datos inválidos.'},400);}
+  if(!entry||typeof entry.id!=='string'||!/^[a-zA-Z0-9-]{16,80}$/.test(entry.id)||typeof entry.leadUid!=='string'||!['whatsapp','instagram','other'].includes(entry.channel)||!['received_manual','note','draft'].includes(entry.kind)||typeof entry.body!=='string'||!entry.body.trim()||entry.body.length>6000)return json({error:'Completa cliente, canal y texto; máximo 6000 caracteres.'},400);
+  const lead=workspace.leads.find(c=>c.uid===entry.leadUid);if(!lead||lead.duplicateOf)return json({error:'Selecciona una oportunidad activa en el CRM.'},400);
+  const previous=await env.DB.prepare('SELECT * FROM crm_conversation_entries WHERE id = ?').bind(entry.id).first();
+  if(previous){if(previous.lead_uid!==entry.leadUid||previous.body!==entry.body.trim()||previous.channel!==entry.channel||previous.kind!==entry.kind)return json({error:'Identificador utilizado por otro registro.'},409);return json({entry:previous,duplicate:true});}
+  const createdAt=new Date().toISOString(),actor=email||user;
+  await env.DB.prepare('INSERT INTO crm_conversation_entries (id,lead_uid,channel,kind,body,actor,created_at) VALUES (?, ?, ?, ?, ?, ?, ?)').bind(entry.id,entry.leadUid,entry.channel,entry.kind,entry.body.trim(),actor,createdAt).run();
+  return json({entry:{id:entry.id,lead_uid:entry.leadUid,channel:entry.channel,kind:entry.kind,body:entry.body.trim(),actor,created_at:createdAt}},201);
+ }
  if(request.method==='GET'&&url.pathname==='/api/state')return json({revision:row?.revision||0,state:row?JSON.parse(row.payload):null,identity:user?{id:user,email}:null});
  if(request.method==='GET'&&url.pathname==='/api/audit'){const result=await env.DB.prepare('SELECT actor, created_at, summary FROM crm_audit ORDER BY created_at DESC LIMIT 100').all();return json({entries:result.results});}
  if(request.method!=='POST'||!['/api/state','/api/sync'].includes(url.pathname))return json({error:'Ruta no disponible.'},404);
